@@ -11,6 +11,8 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
+import thefuzz
+
 
 
 #API KEY PARA CONSEGUIR COORDENADAS POR LA CIUDAD
@@ -46,13 +48,13 @@ def conseguir_ciudad(row):
     
     if user_timezone == 'Eastern Time (US & Canada)':
         user_timezone = 'New York City, New York'
-    elif user_timezone == 'Central Time (US Canada)':
+    elif user_timezone == 'Central Time (US & Canada)':
         user_timezone = 'Austin, Texas'
-    elif user_timezone == 'Mountain Time (US Canada)':
+    elif user_timezone == 'Mountain Time (US & Canada)':
         user_timezone = 'Denver, Colorado'
-    elif user_timezone == 'Pacific Time (US Canada)':
+    elif user_timezone == 'Pacific Time (US & Canada)':
         user_timezone = 'San Francisco, California'
-    elif user_timezone == 'Atlantic Time (Canada)':
+    elif user_timezone == 'Atlantic Time (US & Canada)':
         user_timezone = 'Nova Scotia, Canada'
         
     # Si no se puede utilizar 
@@ -72,17 +74,23 @@ def conseguir_ciudad(row):
 
     return user_timezone
 
+mapaCiudades={'NoneType': [0,0]}
 
 def conseguir_coordenadas(timezone):
     #results = geocoder.geocode(query)
     #coordenadas = [results[0]['geometry']['lat'], results[0]['geometry']['lng']]
+    #Realizamos una excepcion para Nonetype
+    try:
+        if(timezone not in mapaCiudades):
+            location = geolocator.geocode(timezone, timeout=None)   
+            #location = geocoder.geocode(timezone, timeout=None)
+            mapaCiudades[str(timezone)] = [location.latitude, location.longitude]
+            print(mapaCiudades.keys())
+        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ESTO CON LA API CREO QUE NO HARIA FALTA, POIRQUE ES MUY COCHINO Y CON LA API IGUAL VA MEJOR @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        return [mapaCiudades.get(timezone)]
 
-    location = geolocator.geocode(timezone)
-    # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ESTO CON LA API CREO QUE NO HARIA FALTA, POIRQUE ES MUY COCHINO Y CON LA API IGUAL VA MEJOR @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    if location == None:
-        return [51.5073359, -0.12765]
-    return [location.latitude, location.longitude]
-    
+    except:
+        return[0,0]
 #  Se pasan todos los atributos de texto a unicode
 def coerce_to_unicode(x):
     if sys.version_info < (3, 0):
@@ -190,10 +198,13 @@ for index, row in train.iterrows():
     # Si tweet_coord es missingValue
     if row['tweet_coord'] == "nan":
         # Segun el timezone se asigna una ciudad
-        ciudad = conseguir_ciudad(row)                  
+        ciudad = conseguir_ciudad(row)    
+        
+        #actualizar mapa de coordenadas si es nueva ciudad
+        conseguir_coordenadas(ciudad)              
  
         # Conseguimos las coordenadas
-        print("index: ",index, ",tweet_coord: ",train.loc[index, 'tweet_coord'], ", nuevas coordenadas: ", conseguir_coordenadas(ciudad))
+        print("index: ",index, ",tweet_coord: ",train.loc[index, 'tweet_coord'], ", nuevas coordenadas: ", mapaCiudades[str(ciudad)])
 
         train.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
 
