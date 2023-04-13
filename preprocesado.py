@@ -54,9 +54,8 @@ def conseguir_ciudad(row):
         user_timezone = 'Denver, Colorado'
     elif user_timezone == 'Pacific Time (US & Canada)':
         user_timezone = 'San Francisco, California'
-    elif user_timezone == 'Atlantic Time (US & Canada)':
-        user_timezone = 'Nova Scotia, Canada'
-        
+    elif user_timezone == 'Atlantic Time (Canada)':
+        user_timezone = 'Nova Scotia, Canada'   
     # Si no se puede utilizar 
     elif user_timezone == 'nan':
         # Obtenemos la aerolinea
@@ -71,7 +70,9 @@ def conseguir_ciudad(row):
             user_timezone = 'Alexandria, Virginia'
         elif aerolinea == 'Virgin America':
             user_timezone = 'Burlingame, California'
-
+    #El resto de ciudades 
+    else:
+        user_timezone = row['user_timezone']
     return user_timezone
 
 mapaCiudades={'NoneType': [0,0]}
@@ -219,6 +220,7 @@ for index, row in test.iterrows():
         ciudad = conseguir_ciudad(row)                  
             
         # Conseguimos las coordenadas
+        
         print("index: ",index, ",tweet_coord: ",test.loc[index, 'tweet_coord'], ", nuevas coordenadas: ", conseguir_coordenadas(ciudad))
 
         test.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
