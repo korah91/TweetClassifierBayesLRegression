@@ -13,19 +13,75 @@ from sklearn.metrics import confusion_matrix
 
 
 
-#API KEY PARA CONSEGUIR COORDENADAS POR LA CIUDAD:46b90a6f42b1415da5b4ec372a1a4b2e
-api_key = "46b90a6f42b1415da5b4ec372a1a4b2e"
+#API KEY PARA CONSEGUIR COORDENADAS POR LA CIUDAD
+
+#API DE FRAN
+#api_key = "46b90a6f42b1415da5b4ec372a1a4b2e"
+
+#API DE ANDREEA
+#api_key = "05baa7b99edb489abd29b3ba70e7adbc"
+
+#API DE JOEL
+#api_key = ""
+
+#API DE MARIO
+#api_key = ""
 
 
 
 from opencage.geocoder import OpenCageGeocode
 
 # Instalar openCage: pip3 install opencage
-geocoder = OpenCageGeocode(api_key)
+#geocoder = OpenCageGeocode(api_key)
+
+# AHORA UTILIZAMOS pip install geopy PARA NO UTILIZAR LA API, QUE TIENE POCOS USOS
+from geopy.geocoders import Nominatim
+geolocator = Nominatim(user_agent="proyectoSADGE")
 
 
+    
+def conseguir_ciudad(row):
+    # Accedo a la columna
+    user_timezone = row['user_timezone']
+    
+    if user_timezone == 'Eastern Time (US & Canada)':
+        user_timezone = 'New York City, New York'
+    elif user_timezone == 'Central Time (US Canada)':
+        user_timezone = 'Austin, Texas'
+    elif user_timezone == 'Mountain Time (US Canada)':
+        user_timezone = 'Denver, Colorado'
+    elif user_timezone == 'Pacific Time (US Canada)':
+        user_timezone = 'San Francisco, California'
+    elif user_timezone == 'Atlantic Time (Canada)':
+        user_timezone = 'Nova Scotia, Canada'
+        
+    # Si no se puede utilizar 
+    elif user_timezone == 'nan':
+        # Obtenemos la aerolinea
+        aerolinea = row['airline']
+        if aerolinea == 'United':
+            user_timezone = 'Chicago, Illinois'
+        elif aerolinea == 'Southwest':
+            user_timezone = 'Dallas, Texas'
+        elif aerolinea == 'Delta':
+            user_timezone = 'Atlanta, Georgia'
+        elif aerolinea == 'US airways':
+            user_timezone = 'Alexandria, Virginia'
+        elif aerolinea == 'Virgin America':
+            user_timezone = 'Burlingame, California'
 
-def fillNA():
+    return user_timezone
+
+
+def conseguir_coordenadas(timezone):
+    #results = geocoder.geocode(query)
+    #coordenadas = [results[0]['geometry']['lat'], results[0]['geometry']['lng']]
+
+    location = geolocator.geocode(timezone)
+    # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ESTO CON LA API CREO QUE NO HARIA FALTA, POIRQUE ES MUY COCHINO Y CON LA API IGUAL VA MEJOR @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    if location == None:
+        return [51.5073359, -0.12765]
+    return [location.latitude, location.longitude]
     
 #  Se pasan todos los atributos de texto a unicode
 def coerce_to_unicode(x):
@@ -80,7 +136,7 @@ del ml_dataset['airline_sentiment']
 # Se borran las filas en las que la clase a predecir no aparezca
 ml_dataset = ml_dataset[~ml_dataset['__target__'].isnull()]
 
-print(ml_dataset.head(5))
+#print(ml_dataset.head(5))
 
 # Se crean las particiones de Train/Test
 train, test = train_test_split(ml_dataset,test_size=0.2,random_state=42,stratify=ml_dataset[['__target__']])
@@ -116,16 +172,8 @@ for feature in impute_when_missing:
         v = train[feature['feature']].value_counts().index[0]
     elif feature['impute_with'] == 'CONSTANT':
         v = feature['value']
-    elif feature['impute_with'] == 'CONSEGUIR_COORDENADAS':
-        
-        # Hay que hacer una función que 
-        
-        
-        query = train[feature['tweet_location']]
-        print(query + " es la query")
-        #results = geocoder.geocode(query)
-        #coordenadas = [results[0]['geometry']['lat'], results[0]['geometry']['lng']]
-        
+      
+
 
 
     train[feature['feature']] = train[feature['feature']].fillna(v)
@@ -133,30 +181,64 @@ for feature in impute_when_missing:
     print('Imputed missing values in feature %s with value %s' % (feature['feature'], coerce_to_unicode(v)))
 
 
-# Lista con los métodos para escalar cada atributo numerico 
-rescale_features = {'Largo de sepalo': 'AVGSTD', 
-                    'Ancho de sepalo': 'AVGSTD', 
-                    'Largo de petalo': 'AVGSTD',
-                    'Ancho de petalo': 'AVGSTD'}
+# @@@@@@@@@@@@@@@@@@@@@ Tratamos la columna tweet_coord @@@@@@@@@@@@@@@@@@@@@
 
-# Se reescala
-for (feature_name, rescale_method) in rescale_features.items():
-    if rescale_method == 'MINMAX':
-        _min = train[feature_name].min()
-        _max = train[feature_name].max()
-        scale = _max - _min
-        shift = _min
-    else:
-        shift = train[feature_name].mean()
-        scale = train[feature_name].std()
-    if scale == 0.:
-        del train[feature_name]
-        del test[feature_name]
-        print('Feature %s was dropped because it has no variance' % feature_name)
-    else:
-        print('Rescaled %s' % feature_name)
-        train[feature_name] = (train[feature_name] - shift).astype(np.float64) / scale
-        test[feature_name] = (test[feature_name] - shift).astype(np.float64) / scale
+
+# Se utiliza la API para conseguir las coordenadas
+# Por cada fila: index es el numero de fila. row es la fila
+for index, row in train.iterrows():
+    # Si tweet_coord es missingValue
+    if row['tweet_coord'] == "nan":
+        # Segun el timezone se asigna una ciudad
+        ciudad = conseguir_ciudad(row)                  
+ 
+        # Conseguimos las coordenadas
+        print("index: ",index, ",tweet_coord: ",train.loc[index, 'tweet_coord'], ", nuevas coordenadas: ", conseguir_coordenadas(ciudad))
+
+        train.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HAY QUE HACER LAS LLAMADAS A LA API DE UNA VEZ, MANDÁNDOLE LOS VALORES UNICOS DE LAS CIUDADES QUE TENEMOS. ASÍ DE UNA LLAMADA YA TENEMOS UN DICCIONARIO CON LAS COORDENADAS A PONER        
+    
+
+# Ahora lo mismo pero para la particion Test
+for index, row in test.iterrows():
+    # Si tweet_coord es missingValue
+    if row['tweet_coord'] == "nan":
+        # Segun el timezone se asigna una ciudad
+        ciudad = conseguir_ciudad(row)                  
+            
+        # Conseguimos las coordenadas
+        print("index: ",index, ",tweet_coord: ",test.loc[index, 'tweet_coord'], ", nuevas coordenadas: ", conseguir_coordenadas(ciudad))
+
+        test.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
+
+
+print(train.head(3))
+
+# Lista con los métodos para escalar cada atributo numerico 
+# rescale_features = {'Largo de sepalo': 'AVGSTD', 
+#                     'Ancho de sepalo': 'AVGSTD', 
+#                     'Largo de petalo': 'AVGSTD',
+#                     'Ancho de petalo': 'AVGSTD'}
+
+# # Se reescala
+# for (feature_name, rescale_method) in rescale_features.items():
+#     if rescale_method == 'MINMAX':
+#         _min = train[feature_name].min()
+#         _max = train[feature_name].max()
+#         scale = _max - _min
+#         shift = _min
+#     else:
+#         shift = train[feature_name].mean()
+#         scale = train[feature_name].std()
+#     if scale == 0.:
+#         del train[feature_name]
+#         del test[feature_name]
+#         print('Feature %s was dropped because it has no variance' % feature_name)
+#     else:
+#         print('Rescaled %s' % feature_name)
+#         train[feature_name] = (train[feature_name] - shift).astype(np.float64) / scale
+#         test[feature_name] = (test[feature_name] - shift).astype(np.float64) / scale
 
 
 
