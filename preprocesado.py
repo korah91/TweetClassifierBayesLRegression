@@ -29,7 +29,7 @@ ml_dataset = ml_dataset[
 # Se guardan los nombres de las columnas de valores categóricos
 categorical_features = ['airline_sentiment', 'negativereason','airline', 'name', 'text', 'tweet_location', 'user_timezone']
 # Se guardan los nombres de las columnas de valores numericos
-numerical_features = ['tweet_id','Ancho de sepalo','Largo de petalo','Ancho de petalo']
+numerical_features = ['tweet_id','airline_sentimen_confidence','negativereason_confidence','retweet_count']
 text_features = []
 for feature in categorical_features:
     ml_dataset[feature] = ml_dataset[feature].apply(coerce_to_unicode)
@@ -50,8 +50,8 @@ for feature in numerical_features:
 target_map = {'negative': 0, 'neutral': 1, 'positive': 2}
 
 # Columna que se utilizará
-ml_dataset['__target__'] = ml_dataset['Especie'].map(str).map(target_map)
-del ml_dataset['Especie']
+ml_dataset['__target__'] = ml_dataset['airline_sentiment'].map(str).map(target_map)
+del ml_dataset['airline_sentiment']
 
 # Se borran las filas en las que la clase a predecir no aparezca
 ml_dataset = ml_dataset[~ml_dataset['__target__'].isnull()]
@@ -68,8 +68,8 @@ print(test['__target__'].value_counts())
 drop_rows_when_missing = []
 
 # Lista con los atributos que cuando faltan en una instancia se tenga que corregir haciendo la media, mediana, etc. del resto
-impute_when_missing = [{'feature': 'Largo de sepalo', 'impute_with': 'MEAN'},
-                        {'feature': 'Ancho de sepalo', 'impute_with': 'MEAN'},
+impute_when_missing = [{'feature': 'negativereason_confidence', 'impute_with': 'MEAN'},
+                        {'feature': 'negativereason', 'impute_with': 'MODE'},
                         {'feature': 'Largo de petalo', 'impute_with': 'MEAN'},
                         {'feature': 'Ancho de petalo', 'impute_with': 'MEAN'}]
                         
