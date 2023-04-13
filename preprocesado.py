@@ -1,8 +1,32 @@
+import csv
+import os
+import getopt
+import sys
+import numpy as np
+import pandas as pd
+import sklearn as sk
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 
 
-# 
-compania = 
 
+#API KEY PARA CONSEGUIR COORDENADAS POR LA CIUDAD:46b90a6f42b1415da5b4ec372a1a4b2e
+api_key = "46b90a6f42b1415da5b4ec372a1a4b2e"
+
+
+
+from opencage.geocoder import OpenCageGeocode
+
+# Instalar openCage: pip3 install opencage
+geocoder = OpenCageGeocode(api_key)
+
+
+
+def fillNA():
+    
 #  Se pasan todos los atributos de texto a unicode
 def coerce_to_unicode(x):
     if sys.version_info < (3, 0):
@@ -14,7 +38,7 @@ def coerce_to_unicode(x):
         return str(x)
 
 #Abrir el fichero .csv y cargarlo en un dataframe de pandas
-ml_dataset = pd.read_csv(iFile)
+ml_dataset = pd.read_csv("TweetsTrainDev.csv")
 
 #comprobar que los datos se han cargado bien. Cuidado con las cabeceras, la primera línea por defecto la considerara como la que almacena los nombres de los atributos
 # comprobar los parametros por defecto del pd.read_csv en lo referente a las cabeceras si no se quiere lo comentado
@@ -29,7 +53,7 @@ ml_dataset = ml_dataset[
 # Se guardan los nombres de las columnas de valores categóricos
 categorical_features = ['airline_sentiment', 'negativereason','airline', 'name', 'text', 'tweet_location', 'user_timezone']
 # Se guardan los nombres de las columnas de valores numericos
-numerical_features = ['tweet_id','airline_sentimen_confidence','negativereason_confidence','retweet_count']
+numerical_features = ['tweet_id','airline_sentiment_confidence','negativereason_confidence','retweet_count']
 text_features = []
 for feature in categorical_features:
     ml_dataset[feature] = ml_dataset[feature].apply(coerce_to_unicode)
@@ -55,14 +79,14 @@ del ml_dataset['airline_sentiment']
 
 # Se borran las filas en las que la clase a predecir no aparezca
 ml_dataset = ml_dataset[~ml_dataset['__target__'].isnull()]
-print(f)
+
 print(ml_dataset.head(5))
 
 # Se crean las particiones de Train/Test
 train, test = train_test_split(ml_dataset,test_size=0.2,random_state=42,stratify=ml_dataset[['__target__']])
-print(train.head(5))
-print(train['__target__'].value_counts())
-print(test['__target__'].value_counts())
+#print(train.head(5))
+#print(train['__target__'].value_counts())
+#print(test['__target__'].value_counts())
 
 # Lista con los atributos que cuando faltan en una instancia hagan que se tenga que borrar
 drop_rows_when_missing = []
@@ -70,8 +94,8 @@ drop_rows_when_missing = []
 # Lista con los atributos que cuando faltan en una instancia se tenga que corregir haciendo la media, mediana, etc. del resto
 impute_when_missing = [{'feature': 'negativereason_confidence', 'impute_with': 'MEAN'},
                         {'feature': 'negativereason', 'impute_with': 'MODE'},
-                        {'feature': 'Largo de petalo', 'impute_with': 'MEAN'},
-                        {'feature': 'Ancho de petalo', 'impute_with': 'MEAN'}]
+                        {'feature': 'tweet_coord', 'impute_with': 'CONSEGUIR_COORDENADAS'}
+                        ]
                         
 # Se borran las filas en las que falten los atributos que haya en la lista drop_rows_when_missing
 for feature in drop_rows_when_missing:
@@ -92,6 +116,18 @@ for feature in impute_when_missing:
         v = train[feature['feature']].value_counts().index[0]
     elif feature['impute_with'] == 'CONSTANT':
         v = feature['value']
+    elif feature['impute_with'] == 'CONSEGUIR_COORDENADAS':
+        
+        # Hay que hacer una función que 
+        
+        
+        query = train[feature['tweet_location']]
+        print(query + " es la query")
+        #results = geocoder.geocode(query)
+        #coordenadas = [results[0]['geometry']['lat'], results[0]['geometry']['lng']]
+        
+
+
     train[feature['feature']] = train[feature['feature']].fillna(v)
     test[feature['feature']] = test[feature['feature']].fillna(v)
     print('Imputed missing values in feature %s with value %s' % (feature['feature'], coerce_to_unicode(v)))
