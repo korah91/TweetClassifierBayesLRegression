@@ -10,9 +10,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
-
-import thefuzz
-
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+from geotext import GeoText
 
 
 #API KEY PARA CONSEGUIR COORDENADAS POR LA CIUDAD
@@ -29,8 +30,6 @@ import thefuzz
 #API DE MARIO
 #api_key = ""
 
-
-
 from opencage.geocoder import OpenCageGeocode
 
 # Instalar openCage: pip3 install opencage
@@ -40,8 +39,18 @@ from opencage.geocoder import OpenCageGeocode
 from geopy.geocoders import Nominatim
 geolocator = Nominatim(user_agent="proyectoSADGE")
 
-
+#  Se pasan todos los atributos de texto a unicode
+def coerce_to_unicode(x):
+    if sys.version_info < (3, 0):
+        if isinstance(x, str):
+            return unicode(x, 'utf-8')
+        else:
+            return unicode(x)
+    else:
+        return str(x)
     
+    
+# Se utiliza esta funcion para dos columnas; para tweet_location y para tweet_coord
 def conseguir_ciudad(row):
     # Accedo a la columna
     user_timezone = row['user_timezone']
@@ -73,37 +82,103 @@ def conseguir_ciudad(row):
     #El resto de ciudades 
     else:
         user_timezone = row['user_timezone']
+
     return user_timezone
 
-mapaCiudades={'NoneType': [0,0]}
+mapaCiudades={}
 
-def conseguir_coordenadas(timezone):
+
+def conseguir_coordenadas(ciudad):
     #results = geocoder.geocode(query)
     #coordenadas = [results[0]['geometry']['lat'], results[0]['geometry']['lng']]
     #Realizamos una excepcion para Nonetype
     try:
-        if(timezone not in mapaCiudades):
-            location = geolocator.geocode(timezone, timeout=None)   
+        if(ciudad not in mapaCiudades):
+            location = geolocator.geocode(ciudad, timeout=None)   
             #location = geocoder.geocode(timezone, timeout=None)
-            mapaCiudades[str(timezone)] = [location.latitude, location.longitude]
-            print(mapaCiudades.keys())
-        # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ESTO CON LA API CREO QUE NO HARIA FALTA, POIRQUE ES MUY COCHINO Y CON LA API IGUAL VA MEJOR @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        return [mapaCiudades.get(timezone)]
+            mapaCiudades[str(ciudad)] = [location.latitude, location.longitude]
+            # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ESTO CON LA API CREO QUE NO HARIA FALTA, POIRQUE ES MUY COCHINO Y CON LA API IGUAL VA MEJOR @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        return mapaCiudades.get(ciudad)
 
     except:
         return[0,0]
-#  Se pasan todos los atributos de texto a unicode
-def coerce_to_unicode(x):
-    if sys.version_info < (3, 0):
-        if isinstance(x, str):
-            return unicode(x, 'utf-8')
+    
+def tratar_tweet_location(dataset):
+    # Convertir a minuscula
+    dataset['tweet_location'] = dataset['tweet_location'].str.lower()
+
+    # Eliminar caracteres especiales y signos de puntuacion
+    dataset['tweet_location'] = dataset['tweet_location'].str.replace('[^\w\s]', '')
+    
+    # Recorremos cada fila reconociendo la ciudad
+    for index, row in dataset.iterrows():
+        row['tweet_location'] = str(row['tweet_location'])
+        if row['tweet_location'] == 'nan':
+            row['tweet_location'] = conseguir_ciudad(row)
+        ciudad = GeoText(row['tweet_location']).cities
+        
+        # Si el tweet_location tiene una ciudad se reemplaza el valor limpio
+        if (len(ciudad) != 0):
+            dataset.loc[index, 'tweet_location'] = ciudad[0]
         else:
-            return unicode(x)
-    else:
-        return str(x)
+            # Si tiene un missing value o un dato incorrecto se intuye la ciudad utilizando el huso horario o la sede de la aerolinea
+            dataset.loc[index, 'tweet_location'] = str(conseguir_ciudad(row))
+    return dataset
+
+
+# @@@@@@@@@@@@@@@@@@@@@ Tratamos la columna tweet_coord @@@@@@@@@@@@@@@@@@@@@
+def tratar_tweet_coord(dataset):
+    # Se utiliza la API para conseguir las coordenadas
+    # Por cada fila: index es el numero de fila. row es la fila
+    for index, row in dataset.iterrows():
+        # Si tweet_coord es missingValue
+        
+        #print(row['tweet_coord'], ", tipo: ", type(row['tweet_coord']))
+        row['tweet_coord'] = str(row['tweet_coord'])
+        if row['tweet_coord']=='nan':
+
+            # Segun el timezone se asigna una ciudad
+            ciudad = conseguir_ciudad(row)    
+            
+            #actualizar mapa de coordenadas si es nueva ciudad
+            conseguir_coordenadas(ciudad)              
+
+
+            # Conseguimos las coordenadas
+            print("index: ",index, ",tweet_coord: ", dataset.loc[index, 'tweet_coord'], " --> ", mapaCiudades[str(ciudad)])
+
+            dataset.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
+
+    return dataset
+
+def tratar_text(dataset):
+    #print(dataset.head(5))
+    # Convertir a minuscula
+    dataset['text'] = dataset['text'].str.lower()
+
+    # Eliminar caracteres especiales y signos de puntuacion
+    dataset['text'] = dataset['text'].str.replace('[^\w\s]', '')
+
+    # Quitar stopwords
+    stop_words = set(stopwords.words('english'))
+    dataset['text'] = dataset['text'].apply(lambda x: ' '.join([word for word in word_tokenize(x) if word.lower() not in stop_words]))
+
+    # Lematizar
+    stemmer = PorterStemmer()
+    dataset['text'] = dataset['text'].apply(lambda x: ' '.join([stemmer.stem(word) for word in word_tokenize(x)]))
+
+    return dataset
+
+
+def borrar_features(dataset,features):
+    #borra cada feature del dataset
+    for feature in features: 
+        dataset= dataset.drop(feature, axis=1)
+    return dataset
 
 #Abrir el fichero .csv y cargarlo en un dataframe de pandas
 ml_dataset = pd.read_csv("TweetsTrainDev.csv")
+
 
 #comprobar que los datos se han cargado bien. Cuidado con las cabeceras, la primera línea por defecto la considerara como la que almacena los nombres de los atributos
 # comprobar los parametros por defecto del pd.read_csv en lo referente a las cabeceras si no se quiere lo comentado
@@ -134,6 +209,15 @@ for feature in numerical_features:
         ml_dataset[feature] = ml_dataset[feature].astype('double')
 
 
+
+ml_dataset = tratar_tweet_location(ml_dataset)
+ml_dataset = tratar_text(ml_dataset)
+ml_dataset = tratar_tweet_coord(ml_dataset)
+    
+
+
+
+    
 # Los valores posibles de la clase a predecir Especie. 
 # Puede ser de 3 clases
 target_map = {'negative': 0, 'neutral': 1, 'positive': 2}
@@ -147,136 +231,50 @@ ml_dataset = ml_dataset[~ml_dataset['__target__'].isnull()]
 
 #print(ml_dataset.head(5))
 
-# Se crean las particiones de Train/Test
-train, test = train_test_split(ml_dataset,test_size=0.2,random_state=42,stratify=ml_dataset[['__target__']])
-#print(train.head(5))
-#print(train['__target__'].value_counts())
-#print(test['__target__'].value_counts())
-
 # Lista con los atributos que cuando faltan en una instancia hagan que se tenga que borrar
 drop_rows_when_missing = []
 
 # Lista con los atributos que cuando faltan en una instancia se tenga que corregir haciendo la media, mediana, etc. del resto
 impute_when_missing = [{'feature': 'negativereason_confidence', 'impute_with': 'MEAN'},
                         {'feature': 'negativereason', 'impute_with': 'MODE'},
-                        {'feature': 'tweet_coord', 'impute_with': 'CONSEGUIR_COORDENADAS'}
                         ]
                         
 # Se borran las filas en las que falten los atributos que haya en la lista drop_rows_when_missing
 for feature in drop_rows_when_missing:
-    train = train[train[feature].notnull()]
-    test = test[test[feature].notnull()]
+    ml_dataset = ml_dataset[ml_dataset[feature].notnull()]
+    
     print('Dropped missing records in %s' % feature)
 
 # Se corrigen todos los datos faltantes de los atributos en la lista impute_when_missing dependiendo de como se deban tratar
 # En este caso todos se corrigen con la media del resto de instancias
 for feature in impute_when_missing:
     if feature['impute_with'] == 'MEAN':
-        v = train[feature['feature']].mean()
+        v = ml_dataset[feature['feature']].mean()
     elif feature['impute_with'] == 'MEDIAN':
-        v = train[feature['feature']].median()
+        v = ml_dataset[feature['feature']].median()
     elif feature['impute_with'] == 'CREATE_CATEGORY':
         v = 'NULL_CATEGORY'
     elif feature['impute_with'] == 'MODE':
-        v = train[feature['feature']].value_counts().index[0]
+        print("SE ARREGLA NEGATIVEREASON")
+        valores_de_moda = ml_dataset[feature['feature']].value_counts()
+        print(valores_de_moda)
+        # Si en el dataset la moda es nan, no hay que poner nan en el procesado
+        if valores_de_moda[0] == 'nan':
+            v = ml_dataset[feature['feature']].value_counts().index[1]
+        else:
+            v = ml_dataset[feature['feature']].value_counts().index[0]
+        
     elif feature['impute_with'] == 'CONSTANT':
         v = feature['value']
       
-
-
-
-    train[feature['feature']] = train[feature['feature']].fillna(v)
-    test[feature['feature']] = test[feature['feature']].fillna(v)
+    ml_dataset[feature['feature']] = ml_dataset[feature['feature']].fillna(v)
     print('Imputed missing values in feature %s with value %s' % (feature['feature'], coerce_to_unicode(v)))
 
 
-# @@@@@@@@@@@@@@@@@@@@@ Tratamos la columna tweet_coord @@@@@@@@@@@@@@@@@@@@@
+ml_dataset.to_csv("datosProcesados.csv", sep=',', encoding='utf-8', index=True, header=True)
 
+print(ml_dataset.head(5))
+print("Se ha llamado a la API ", len(mapaCiudades), " veces.")
 
-# Se utiliza la API para conseguir las coordenadas
-# Por cada fila: index es el numero de fila. row es la fila
-for index, row in train.iterrows():
-    # Si tweet_coord es missingValue
-    if row['tweet_coord'] == "nan":
-        # Segun el timezone se asigna una ciudad
-        ciudad = conseguir_ciudad(row)    
-        
-        #actualizar mapa de coordenadas si es nueva ciudad
-        conseguir_coordenadas(ciudad)              
- 
-        # Conseguimos las coordenadas
-        print("index: ",index, ",tweet_coord: ",train.loc[index, 'tweet_coord'], ", nuevas coordenadas: ", mapaCiudades[str(ciudad)])
+print(type(ml_dataset.loc[0, 'negativereason']))
 
-        train.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
-
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HAY QUE HACER LAS LLAMADAS A LA API DE UNA VEZ, MANDÁNDOLE LOS VALORES UNICOS DE LAS CIUDADES QUE TENEMOS. ASÍ DE UNA LLAMADA YA TENEMOS UN DICCIONARIO CON LAS COORDENADAS A PONER        
-    
-
-# Ahora lo mismo pero para la particion Test
-for index, row in test.iterrows():
-    # Si tweet_coord es missingValue
-    if row['tweet_coord'] == "nan":
-        # Segun el timezone se asigna una ciudad
-        ciudad = conseguir_ciudad(row)                  
-            
-        # Conseguimos las coordenadas
-        
-        print("index: ",index, ",tweet_coord: ",test.loc[index, 'tweet_coord'], ", nuevas coordenadas: ", conseguir_coordenadas(ciudad))
-
-        test.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
-
-
-print(train.head(3))
-
-# Lista con los métodos para escalar cada atributo numerico 
-# rescale_features = {'Largo de sepalo': 'AVGSTD', 
-#                     'Ancho de sepalo': 'AVGSTD', 
-#                     'Largo de petalo': 'AVGSTD',
-#                     'Ancho de petalo': 'AVGSTD'}
-
-# # Se reescala
-# for (feature_name, rescale_method) in rescale_features.items():
-#     if rescale_method == 'MINMAX':
-#         _min = train[feature_name].min()
-#         _max = train[feature_name].max()
-#         scale = _max - _min
-#         shift = _min
-#     else:
-#         shift = train[feature_name].mean()
-#         scale = train[feature_name].std()
-#     if scale == 0.:
-#         del train[feature_name]
-#         del test[feature_name]
-#         print('Feature %s was dropped because it has no variance' % feature_name)
-#     else:
-#         print('Rescaled %s' % feature_name)
-#         train[feature_name] = (train[feature_name] - shift).astype(np.float64) / scale
-#         test[feature_name] = (test[feature_name] - shift).astype(np.float64) / scale
-
-
-
-
-# Valores del conjunto Train
-trainX = train.drop('__target__', axis=1)
-#trainY = train['__target__']
-
-# Valores del conjunto Test
-testX = test.drop('__target__', axis=1)
-#testY = test['__target__']
-
-# Etiquetas del conjunto Train
-trainY = np.array(train['__target__'])
-# Etiquetas del conjunto Test
-testY = np.array(test['__target__'])
-
-# Explica lo que se hace en este paso
-# Se realiza undersampling con la funcion de la libreria imbalanced-learn.
-# El undersampling consiste en borrar instancias de la clase dominante para equilibrar el dataset
-
-# Utilizamos un dict como sampling strategy
-sampling_strategy = {0: 10, 1: 10, 2: 10}
-undersample = RandomUnderSampler(sampling_strategy=sampling_strategy)
-
-# Se reemplazan los conjuntos Train/Test con unos conjuntos a los que se les ha realizado undersampling
-trainXUnder,trainYUnder = undersample.fit_resample(trainX,trainY)
-testXUnder,testYUnder = undersample.fit_resample(testX, testY)
