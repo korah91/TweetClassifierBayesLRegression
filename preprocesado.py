@@ -135,7 +135,8 @@ def tratar_tweet_coord(dataset):
         
         #print(row['tweet_coord'], ", tipo: ", type(row['tweet_coord']))
         row['tweet_coord'] = str(row['tweet_coord'])
-        if row['tweet_coord']=='nan':
+        #Este if se encarga de arreglar las coordenadas que son NAN o [0, 0] **IMPORTANTE EL ESPACIO ENTRE LA COMA Y EL 0**
+        if row['tweet_coord']=='nan' or row['tweet_coord']=="[0.0, 0.0]" or row['tweet_coord']=="[0, 0]":
 
             # Segun el timezone se asigna una ciudad
             ciudad = conseguir_ciudad(row)    
@@ -148,7 +149,6 @@ def tratar_tweet_coord(dataset):
             print("index: ",index, ",tweet_coord: ", dataset.loc[index, 'tweet_coord'], " --> ", mapaCiudades[str(ciudad)])
 
             dataset.loc[index, 'tweet_coord'] = str(conseguir_coordenadas(ciudad))
-
     return dataset
 
 def tratar_text(dataset):
@@ -176,6 +176,26 @@ def borrar_features(dataset,features):
         dataset= dataset.drop(feature, axis=1)
     return dataset
 
+def reescale(dataset):
+    rescale_features = {'retweet_count': 'MINMAX'}
+    #Normalizamos.
+    for (feature_name, rescale_method) in rescale_features.items():
+        if rescale_method == 'MINMAX':
+            _min = dataset[feature_name].min()
+            _max = dataset[feature_name].max()
+            scale = _max - _min
+            shift = _min
+        else:
+            shift = dataset[feature_name].mean()
+            scale = dataset[feature_name].std()
+        if scale == 0.:
+            del dataset[feature_name]
+            print('Feature %s was dropped because it has no variance' % feature_name)
+        else:
+            print('Rescaled %s' % feature_name)
+            dataset[feature_name] = (dataset[feature_name] - shift).astype(np.float64) / scale
+            
+        return dataset
 #Abrir el fichero .csv y cargarlo en un dataframe de pandas
 ml_dataset = pd.read_csv("TweetsTrainDev.csv")
 
@@ -213,7 +233,7 @@ for feature in numerical_features:
 ml_dataset = tratar_tweet_location(ml_dataset)
 ml_dataset = tratar_text(ml_dataset)
 ml_dataset = tratar_tweet_coord(ml_dataset)
-    
+ml_dataset = reescale(ml_dataset)    
 
 
 
@@ -276,5 +296,5 @@ ml_dataset.to_csv("datosProcesados.csv", sep=',', encoding='utf-8', index=True, 
 print(ml_dataset.head(5))
 print("Se ha llamado a la API ", len(mapaCiudades), " veces.")
 
-print(type(ml_dataset.loc[0, 'negativereason']))
+print(mapaCiudades)
 
