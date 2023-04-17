@@ -5,11 +5,13 @@ import sys
 import numpy as np
 import pandas as pd
 import sklearn as sk
+import re
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
+from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
@@ -86,7 +88,6 @@ def conseguir_ciudad(row):
     return user_timezone
 
 mapaCiudades={}
-
 
 def conseguir_coordenadas(ciudad):
     #results = geocoder.geocode(query)
@@ -233,11 +234,13 @@ for feature in numerical_features:
 ml_dataset = tratar_tweet_location(ml_dataset)
 ml_dataset = tratar_text(ml_dataset)
 ml_dataset = tratar_tweet_coord(ml_dataset)
-ml_dataset = reescale(ml_dataset)    
+ml_dataset = reescale(ml_dataset)
+
+#se hace sin stopwords
+#tfidfvector = TfidfVectorizer().fit_transform(ml_dataset['text'])
+#print("n_samples: %d, n_features: %d" % tfidfvector.shape)
 
 
-
-    
 # Los valores posibles de la clase a predecir Especie. 
 # Puede ser de 3 clases
 target_map = {'negative': 0, 'neutral': 1, 'positive': 2}
@@ -255,9 +258,10 @@ ml_dataset = ml_dataset[~ml_dataset['__target__'].isnull()]
 drop_rows_when_missing = []
 
 # Lista con los atributos que cuando faltan en una instancia se tenga que corregir haciendo la media, mediana, etc. del resto
-impute_when_missing = [{'feature': 'negativereason_confidence', 'impute_with': 'MEAN'},
-                        {'feature': 'negativereason', 'impute_with': 'MODE'},
+impute_when_missing = [{'feature': 'negativereason_confidence', 'impute_with': 'MEAN'}
                         ]
+#moda negativereason
+#{'feature': 'negativereason', 'impute_with': 'MODE'},
                         
 # Se borran las filas en las que falten los atributos que haya en la lista drop_rows_when_missing
 for feature in drop_rows_when_missing:
@@ -296,5 +300,5 @@ ml_dataset.to_csv("datosProcesados.csv", sep=',', encoding='utf-8', index=True, 
 print(ml_dataset.head(5))
 print("Se ha llamado a la API ", len(mapaCiudades), " veces.")
 
-print(mapaCiudades)
+#print(mapaCiudades)
 
