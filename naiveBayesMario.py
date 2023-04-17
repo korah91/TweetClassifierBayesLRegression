@@ -17,7 +17,7 @@ from sklearn.pipeline import make_pipeline
 
 
 df = pd.read_csv("datosProcesados.csv")
-print(df.head(5))
+#print(df.head(5))
 
 del df['tweet_id']
 print(df.head(5))
