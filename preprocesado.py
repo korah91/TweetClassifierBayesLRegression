@@ -156,8 +156,11 @@ def tratar_text(dataset):
     #print(dataset.head(5))
 
     # Quitar URLs
-    #dataset['text']=re.compile(r'https?://\S+|www\.\S+').sub(r'',str(dataset['text']))
+    #dataset['text'] = re.compile(r'https?://\S+|www\.\S+').sub(r'',str(dataset['text']))
 
+    dataset['text'] = dataset['text'].str.replace(r'https?://\S+', '', regex=True)
+
+    
     # Convertir a minuscula
     dataset['text'] = dataset['text'].str.lower()
 
@@ -235,10 +238,10 @@ for feature in numerical_features:
 
 
 
-#ml_dataset = tratar_tweet_location(ml_dataset)
+ml_dataset = tratar_tweet_location(ml_dataset)
 ml_dataset = tratar_text(ml_dataset)
-#ml_dataset = tratar_tweet_coord(ml_dataset)
-#ml_dataset = reescale(ml_dataset)
+ml_dataset = tratar_tweet_coord(ml_dataset)
+ml_dataset = reescale(ml_dataset)
 
 #se hace sin stopwords
 #tfidfvector = TfidfVectorizer().fit_transform(ml_dataset['text'])

@@ -1,11 +1,8 @@
-# This Python 3 environment comes with many helpful analytics libraries installed
-# It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python
-# For example, here's several helpful packages to load in 
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import pandas as pd 
 
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import matplotlib.pyplot as plt # for data visualization purposes
-import seaborn as sns # for statistical data visualization
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -15,6 +12,9 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
 from sklearn.datasets import fetch_20newsgroups
 from imblearn.over_sampling import SMOTE 
+from sklearn.linear_model import LogisticRegression
+
+
 
 
 df = pd.read_csv("datosProcesados.csv")
@@ -38,13 +38,13 @@ X,y = smote.fit_resample(tfidf_X,y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.2, random_state= 26)
 
 
-# Ejecutamos naive bayes
-naive_bayes_classifier = MultinomialNB()
-
-naive_bayes_classifier.fit(X_train, y_train)
+# Ejecutamos Logistic Regression
+# Utilizando el parametro C=10.0 se consigue una mayor regulación y es mejor para datasets pequeños porque evita el overfitting en ellos
+logistic_regression = LogisticRegression(C=10.0, random_state=42)
+logistic_regression.fit(X_train, y_train)
 
 # Conseguimos las predicciones
-y_pred = naive_bayes_classifier.predict(X_test)
+y_pred = logistic_regression.predict(X_test)
 
 print(accuracy_score(y_pred, y_test))
 
