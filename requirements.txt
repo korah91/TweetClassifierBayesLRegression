@@ -1,0 +1,10 @@
+matplotlib
+pandas
+numpy
+seaborn
+
+scikit-learn
+imbalanced-learn
+
+geotext
+geopy
