@@ -70,3 +70,6 @@ print(classification_report(y_test, y_pred))
 
 
 y_train.value_counts().plot(kind='bar')
+
+print("INstancias en Train", X_train.shape[0])
+print("INstancias en Test", X_test.shape[0])
