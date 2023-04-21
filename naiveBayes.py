@@ -39,7 +39,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.2, random
 
 
 # Ejecutamos naive bayes
-naive_bayes = MultinomialNB()
+naive_bayes = MultinomialNB(alpha=0, fit_prior=False)
 
 naive_bayes.fit(X_train, y_train)
 
@@ -71,5 +71,8 @@ print(classification_report(y_test, y_pred))
 
 y_train.value_counts().plot(kind='bar')
 
-print("INstancias en Train", X_train.shape[0])
-print("INstancias en Test", X_test.shape[0])
+
+
+
+#print("INstancias en Train", X_train.shape[0])
+#print("INstancias en Test", X_test.shape[0])
