@@ -39,7 +39,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.2, random
 
 
 # Ejecutamos naive bayes
-naive_bayes = MultinomialNB(alpha=0, fit_prior=False)
+naive_bayes = MultinomialNB(alpha=0, fit_prior=True)
 
 naive_bayes.fit(X_train, y_train)
 

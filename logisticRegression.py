@@ -48,7 +48,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.2, random
 
 # Ejecutamos Logistic Regression
 # Utilizando el parametro C=10.0 se consigue una mayor regulación y es mejor para datasets pequeños porque evita el overfitting en ellos
-logistic_regression = LogisticRegression(C=10.0, random_state=42)
+logistic_regression = LogisticRegression(C=32.5, random_state=42)
 logistic_regression.fit(X_train, y_train)
 
 # Conseguimos las predicciones
