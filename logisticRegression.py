@@ -27,23 +27,23 @@ df = pd.read_csv(dataset_name)
 # Sacamos X y los labels
 X= df['text']
 y= df['__target__']
-#smote = SMOTE()
+smote = SMOTE()
 #X,y = smote.fit_resample(X,y)
 #(PEORES RESULTADOS)tomeklinks elimina los ejemplos cercanos entre las clases minoritarias y mayoritarias, con el objetivo de aumentar la separación entre las clases
 #tomek_links = TomekLinks()
 #(HORRIBLES RESULTADOS) Este método elimina aleatoriamente ejemplos de la clase mayoritaria para equilibrar el conjunto de datos.
 #undersampler = RandomUnderSampler(random_state=42)
-oversampler = RandomOverSampler(random_state=42)
+#oversampler = RandomOverSampler(random_state=42)
 
 # Vectorizamos en tf_idf todo
 tfidf_vectorizer = TfidfVectorizer() 
 tfidf_X = tfidf_vectorizer.fit_transform(X) # Se aplica tf idf a todos los datos
 
 # Utilizamos SMOTE para balancear los datos. De esta forma hemos conseguido un 0.2 mas en accuracy
-#X,y = smote.fit_resample(tfidf_X,y)
+X,y = smote.fit_resample(tfidf_X,y)
 #X, y = tomek_links.fit_resample(tfidf_X, y)
 #X, y = undersampler.fit_resample(tfidf_X, y)
-X, y = oversampler.fit_resample(tfidf_X, y)
+#X, y = oversampler.fit_resample(tfidf_X, y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.2, random_state= 26)
 
 
