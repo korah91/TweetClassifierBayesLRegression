@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import pandas as pd 
-
+import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -15,8 +15,11 @@ from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import TomekLinks
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
+import sys
 
-df = pd.read_csv("datosProcesados.csv")
+
+dataset_name = sys.argv[1]
+df = pd.read_csv(dataset_name)
 #print(df.head())
 
 # Sacamos X y los labels
@@ -76,3 +79,6 @@ y_train.value_counts().plot(kind='bar')
 
 #print("INstancias en Train", X_train.shape[0])
 #print("INstancias en Test", X_test.shape[0])
+
+# Guardamos el modelo
+pickle.dump(naive_bayes, open('modeloNaiveBayes.sav', 'wb'))

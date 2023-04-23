@@ -16,7 +16,10 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from geotext import GeoText
+import sys
 
+
+dataset_name = sys.argv[1]
 
 #API KEY PARA CONSEGUIR COORDENADAS POR LA CIUDAD
 
@@ -205,7 +208,7 @@ def reescale(dataset):
             
         return dataset
 #Abrir el fichero .csv y cargarlo en un dataframe de pandas
-ml_dataset = pd.read_csv("TweetsTrainDev.csv")
+ml_dataset = pd.read_csv(dataset_name)
 
 
 #comprobar que los datos se han cargado bien. Cuidado con las cabeceras, la primera línea por defecto la considerara como la que almacena los nombres de los atributos

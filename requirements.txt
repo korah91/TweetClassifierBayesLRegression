@@ -8,3 +8,5 @@ imbalanced-learn
 
 geotext
 geopy
+
+pickle

@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import pandas as pd 
-
+import pickle
+import sys
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -19,8 +20,8 @@ from imblearn.over_sampling import RandomOverSampler
 
 
 
-
-df = pd.read_csv("datosProcesados.csv")
+dataset_name = sys.argv[1]
+df = pd.read_csv(dataset_name)
 #print(df.head())
 
 # Sacamos X y los labels
@@ -78,3 +79,8 @@ print(classification_report(y_test, y_pred))
 
 
 y_train.value_counts().plot(kind='bar')
+
+
+
+# Guardamos el modelo
+pickle.dump(logistic_regression, open('modeloLogisticRegression.sav', 'wb'))
