@@ -4,6 +4,8 @@ from sklearn.decomposition import LatentDirichletAllocation
 import sys
 import pandas as pd
 import numpy as np
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 dataset_name = sys.argv[1]
 df = pd.read_csv(dataset_name)
@@ -28,16 +30,24 @@ for j in tf_matrix:
     for i, topic in enumerate(lda_model.components_):
         top_words_idx = np.argsort(topic)[::-1][:10] # obtenemos las 10 palabras más relevantes
         topic_words.append([vectorizer.get_feature_names_out()[idx] for idx in top_words_idx])
-    indice =indice +1
-    if indice ==20:
+    if index not in topicos:
+        topicos[index] = topic_words
+    indice = indice + 1
+
+    if indice == 20:
         break
+
 i = 0
-print(len(resultados))
 for documento in X:
     print('El documento: ' + str(documento))
     print('pertenece al tópico: ' + str(resultados[i]))
     i += 1
-    if(i == 20):
+    if i == 20:
         break
 
-
+for i in topicos.keys():
+    wordcloud = WordCloud().generate(' '.join([str(word) for word in topicos[i]]))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.title('Topico ' + str(i))
+    plt.show()
