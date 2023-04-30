@@ -23,7 +23,7 @@ vectorizer = CountVectorizer()
 tf_matrix = vectorizer.fit_transform(X)
 
 # Crear un modelo LDA con 20 tópicos
-lda_model = LatentDirichletAllocation(n_components=20)
+lda_model = LatentDirichletAllocation(n_components=20, max_iter=10, learning_method='online', learning_offset=10.,random_state=0).fit(tf_matrix)
 lda_model.fit(tf_matrix)
 
 # Obtener las distribuciones de tópicos para todos los documentos
@@ -39,8 +39,6 @@ for i, topic in enumerate(lda_model.components_):
     top_words_idx = np.argsort(topic)[::-1][:10]
     topic_words = [vectorizer.get_feature_names_out()[idx] for idx in top_words_idx]
     topicos[i] = topic_words
-# Crear un diccionario con las palabras más relevantes de cada tópico
-
     
 
 # Crear la carpeta si no existe
