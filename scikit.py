@@ -1,59 +1,64 @@
 import os
-from sklearn.feature_extraction.text import CountVectorizer
-import numpy as np
-from sklearn.decomposition import LatentDirichletAllocation
-import sys
-import pandas as pd
-import numpy as np
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
 import csv
+import sys
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Nombre del archivo del dataset
+
 dataset_name = sys.argv[1]
+
+# Leer el dataset
 df = pd.read_csv(dataset_name)
-#cogemos las filas de las negativas para saber sus topicos 
-valores = [1, 2, 0]
-arreglo = np.array(valores, dtype=np.int64)
-X = df[df['__target__'] == arreglo[2] ]['text']
-X=X[:1000]
-# aplicamos tf en la columna text
+
+# Seleccionar los documentos negativos
+X = df[df['__target__'] == 0]['text'][:1000]  # Cambiar 0 por el valor correspondiente
+
+# Aplicar TF en la columna "text"
 vectorizer = CountVectorizer()
 tf_matrix = vectorizer.fit_transform(X)
 
-# creamos un elemento LatentDirichAtLocation con el número de tópicos = 10
+# Crear un modelo LDA con 20 tópicos
 lda_model = LatentDirichletAllocation(n_components=20)
 lda_model.fit(tf_matrix)
 
-resultados = []
+# Obtener las distribuciones de tópicos para todos los documentos
+doc_lda = lda_model.transform(tf_matrix)
+
+# Obtener los tópicos para cada documento
+resultados = np.argmax(doc_lda, axis=1)
+
+# Imprimir las palabras más relevantes de cada tópico
+for i, topic in enumerate(lda_model.components_):
+    print("Topico %d:" % (i))
+    print(" ".join([vectorizer.get_feature_names_out()[j] for j in topic.argsort()[:-10 - 1:-1]]))
+
+# Crear un diccionario con las palabras más relevantes de cada tópico
 topicos = {}
-indice = 0
-for j in tf_matrix:
-    doc_lda = lda_model.transform(j)
-    index = doc_lda.argmax()
-    resultados.append(index)
-    topic_words = []
-    for i, topic in enumerate(lda_model.components_):
-        top_words_idx = np.argsort(topic)[::-1][:10] # obtenemos las 10 palabras más relevantes
-        topic_words.append([vectorizer.get_feature_names_out()[idx] for idx in top_words_idx])
-    if index not in topicos:
-        topicos[index] = topic_words
-i=0
-for documento in X:
-    print('El documento: ' + str(documento))
-    print('pertenece al tópico: ' + str(resultados[i]))
-    i +=1
+for i, topic in enumerate(lda_model.components_):
+    top_words_idx = np.argsort(topic)[::-1][:10]
+    topic_words = [vectorizer.get_feature_names_out()[idx] for idx in top_words_idx]
+    topicos[i] = topic_words
+
+# Crear la carpeta si no existe
 if not os.path.exists("TopicosNegativos"):
-    # Crear la carpeta
-    os.makedirs('TopicosNegativos')
+    os.makedirs("TopicosNegativos")
+
+# Crear una WordCloud para cada tópico y guardarla en un archivo
 for i in topicos.keys():
-    wordcloud = WordCloud().generate(' '.join([str(word) for word in topicos[i]]))
-    plt.imshow(wordcloud, interpolation='bilinear')
+    wordcloud = WordCloud().generate(" ".join([str(word) for word in topicos[i]]))
+    plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
-    plt.title('Topico ' + str(i))
-    plt.savefig('TopicosNegativos/mi_wordcloud_del_topico_' + str(i) + '.jpg')
-#crear csv
-# guardar resultados en un archivo CSV
-with open('resultados.csv', mode='w', newline='') as file:
+    plt.title(f"Topico {i}")
+    plt.savefig(f"TopicosNegativos/mi_wordcloud_del_topico_{i}.jpg")
+
+# Guardar los resultados en un archivo CSV
+with open("resultados.csv", mode="w", newline="") as file:
     writer = csv.writer(file)
-    writer.writerow(['documento', 'topico'])
+    writer.writerow(["documento", "topico"])
     for i, doc in enumerate(X):
         writer.writerow([doc, resultados[i]])
