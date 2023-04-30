@@ -31,18 +31,17 @@ doc_lda = lda_model.transform(tf_matrix)
 
 # Obtener los tópicos para cada documento
 resultados = np.argmax(doc_lda, axis=1)
-
+topicos = {}
 # Imprimir las palabras más relevantes de cada tópico
 for i, topic in enumerate(lda_model.components_):
     print("Topico %d:" % (i))
     print(" ".join([vectorizer.get_feature_names_out()[j] for j in topic.argsort()[:-10 - 1:-1]]))
-
-# Crear un diccionario con las palabras más relevantes de cada tópico
-topicos = {}
-for i, topic in enumerate(lda_model.components_):
     top_words_idx = np.argsort(topic)[::-1][:10]
     topic_words = [vectorizer.get_feature_names_out()[idx] for idx in top_words_idx]
     topicos[i] = topic_words
+# Crear un diccionario con las palabras más relevantes de cada tópico
+
+    
 
 # Crear la carpeta si no existe
 if not os.path.exists("TopicosNegativos"):
