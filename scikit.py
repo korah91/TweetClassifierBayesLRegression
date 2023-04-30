@@ -16,7 +16,7 @@ dataset_name = sys.argv[1]
 df = pd.read_csv(dataset_name)
 
 # Seleccionar los documentos negativos
-X = df[df['__target__'] == 0]['text'][:1000]  # Cambiar 0 por el valor correspondiente
+X = df[df['__target__'] == 0]['text']  # Cambiar 0 por el valor correspondiente
 
 # Aplicar TF en la columna "text"
 vectorizer = CountVectorizer()
