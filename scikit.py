@@ -14,6 +14,7 @@ df = pd.read_csv(dataset_name)
 valores = [1, 2, 0]
 arreglo = np.array(valores, dtype=np.int64)
 X = df[df['__target__'] == arreglo[2] ]['text']
+X=X[:1000]
 # aplicamos tf en la columna text
 vectorizer = CountVectorizer()
 tf_matrix = vectorizer.fit_transform(X)
@@ -35,17 +36,11 @@ for j in tf_matrix:
         topic_words.append([vectorizer.get_feature_names_out()[idx] for idx in top_words_idx])
     if index not in topicos:
         topicos[index] = topic_words
-    indice = indice + 1
-    if indice == 20:
-        break
-
-i = 0
+i=0
 for documento in X:
     print('El documento: ' + str(documento))
     print('pertenece al tópico: ' + str(resultados[i]))
-    i += 1
-    if i == 20:
-        break
+    i +=1
 if not os.path.exists("TopicosNegativos"):
     # Crear la carpeta
     os.makedirs('TopicosNegativos')
