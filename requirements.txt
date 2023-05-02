@@ -11,4 +11,3 @@ gensim
 pyLDAvis
 wordcloud
 
-pickle
