@@ -7,7 +7,7 @@ import pyLDAvis
 import pyLDAvis.gensim 
 import matplotlib.pyplot as plt
 import numpy as np
-
+from gensim.models.ldamulticore import LdaMulticore
 import pandas as pd 
 
 
@@ -46,18 +46,16 @@ corpus = [id2word.doc2bow(text) for text in data_words]
 # Cada palabra: (word_id, word_frequency). Si es (47,3) quiere decir que la palabra con id 47 aparece 3 veces en el documento
 
 def funcionLDA_model(corpus, id2word, num_topics, iterations):
-    lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,  
+    lda_model = LdaMulticore(corpus=corpus,  
                                             id2word=id2word,
                                             num_topics=num_topics, 
                                             random_state=100,
-                                            update_every=1,
                                             chunksize=100,
                                             passes=20,
-                                            alpha='auto',
-                                            eta='auto',
                                             iterations=iterations,
                                             eval_every= None,
-                                            per_word_topics=True)
+                                            per_word_topics=True,
+                                            workers=6)
     
     # La idea es tener la mejor similitud entre los textos de un topico mientras que se minimiza la similitud con los textos de otros
     # La coherencia relaciona la distancia intracluster con la distancia intercluster
