@@ -3,10 +3,10 @@ import gensim
 import gensim.corpora as corpora
 from gensim.utils import simple_preprocess
 from gensim.models import CoherenceModel
-# Plotting tools
 import pyLDAvis
-import pyLDAvis.gensim  # don't skip this
+import pyLDAvis.gensim 
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pandas as pd 
 
@@ -42,27 +42,51 @@ id2word = corpora.Dictionary(data_words)
 
 # Se crea el corpus
 corpus = [id2word.doc2bow(text) for text in data_words]
-print(corpus[0])
+#print(corpus[0])
 # Cada palabra: (word_id, word_frequency). Si es (47,3) quiere decir que la palabra con id 47 aparece 3 veces en el documento
 
+def funcionLDA_model(corpus, id2word, num_topics, iterations):
+    lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,  
+                                            id2word=id2word,
+                                            num_topics=num_topics, 
+                                            random_state=100,
+                                            update_every=1,
+                                            chunksize=100,
+                                            passes=20,
+                                            alpha='auto',
+                                            eta='auto',
+                                            iterations=iterations,
+                                            eval_every= None,
+                                            per_word_topics=True)
+    
+    # La idea es tener la mejor similitud entre los textos de un topico mientras que se minimiza la similitud con los textos de otros
+    # La coherencia relaciona la distancia intracluster con la distancia intercluster
+    coherence_model_lda = CoherenceModel(model=lda_model, texts=data_words, dictionary=id2word, coherence='c_v')
+    coherence_lda = coherence_model_lda.get_coherence()
+    print('Coherence Score: ', coherence_lda, ', n_topics: ', num_topics)
+    return coherence_lda
 
-lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,  
-                                           id2word=id2word,
-                                           num_topics=20, 
-                                           random_state=100,
-                                           update_every=1,
-                                           chunksize=100,
-                                           passes=20,
-                                           alpha='auto',
-                                           eta='auto',
-                                           iterations=100,
-                                           eval_every= None,
-                                           per_word_topics=True)
 
 # Imprime los topicos; por cada topico muestra su id y luego las palabras mas frecuentes con la frecuencia de esa palabra en ese topico
-print(lda_model.print_topics())
+#print(lda_model.print_topics())
+registroIteraciones = []
 
-# La coherencia relaciona la distancia intracluster con la distancia intercluster
-coherence_model_lda = CoherenceModel(model=lda_model, texts=data_words, dictionary=id2word, coherence='c_v')
-coherence_lda = coherence_model_lda.get_coherence()
-print('\nCoherence Score: ', coherence_lda)
+# Itera
+for n_topicos in np.arange(4, 20, 2):
+    
+    # Guardamos los datos de la iteracion
+    coherence = funcionLDA_model(corpus, id2word, n_topicos, 15)
+    iteracion = {'n_topicos': n_topicos, 'coherence': coherence}
+    # La anadimos al registro de iteraciones
+    registroIteraciones.append(iteracion)
+
+# Saco la mejor iteracion
+i = 0
+maxCoherence = {'iteracion': 0, 'coherence': 0}
+for iteracion in registroIteraciones:
+    if iteracion['coherence'] > maxCoherence['coherence']:
+        maxCoherence = {'iteracion': i, 'coherence': iteracion['coherence']}
+    i+=1
+
+mejorIteracion = maxCoherence['iteracion']
+print("La mejor iteración es ",mejorIteracion, ". coherence=",registroIteraciones[mejorIteracion]['coherence'])

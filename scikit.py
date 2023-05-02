@@ -28,6 +28,8 @@ tf_matrix = vectorizer.fit_transform(X)
 lda_model = LatentDirichletAllocation(n_components=20, max_iter=10, learning_method='online', learning_offset=10.,random_state=0).fit(tf_matrix)
 lda_model.fit(tf_matrix)
 
+
+
 # Obtener las distribuciones de tópicos para todos los documentos
 doc_lda = lda_model.transform(tf_matrix)
 
