@@ -10,3 +10,5 @@ geotext
 geopy
 
 pickle
+gensim
+pyLDAvis

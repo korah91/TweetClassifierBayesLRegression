@@ -35,12 +35,10 @@ df = pd.read_csv("datosProcesados.csv")
 X = df.loc[df['__target__']] == 'negative'
 
 
-wcss = []
-for i in range(1, 11):
-    kmeans = KMeans(n_clusters=i, init='k-means++', random_state=42)
-    kmeans.fit(X)
-    wcss.append(kmeans.inertia_)
-plt.plot(range(1, 11), wcss)
+kmeans = KMeans(n_clusters=3, init='k-means++', random_state=42)
+
+plt.plot(range(1, 11))
+
 plt.title('Método del codo')
 plt.xlabel('Número de clusters')
 plt.ylabel('WCSS')
