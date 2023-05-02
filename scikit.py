@@ -8,6 +8,8 @@ from wordcloud import WordCloud
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
 
+# Para ejecutarlo: python .\scikit.py .\datosProcesados.csv
+
 # Nombre del archivo del dataset
 
 dataset_name = sys.argv[1]
@@ -54,8 +56,8 @@ for i in topicos.keys():
     plt.savefig(f"TopicosNegativos/mi_wordcloud_del_topico_{i}.jpg")
 
 # Guardar los resultados en un archivo CSV
-with open("resultados.csv", mode="w", newline="") as file:
+with open("texto-topico.csv", mode="w", newline="") as file:
     writer = csv.writer(file)
-    writer.writerow(["documento", "topico"])
+    writer.writerow(["nDocumento", "documento", "topico"])
     for i, doc in enumerate(X):
-        writer.writerow([doc, resultados[i]])
+        writer.writerow([i, doc, resultados[i]])

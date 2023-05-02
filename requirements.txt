@@ -2,13 +2,13 @@ matplotlib
 pandas
 numpy
 seaborn
-
 scikit-learn
 imbalanced-learn
-
 geotext
 geopy
 
-pickle
 gensim
 pyLDAvis
+wordcloud
+
+pickle
