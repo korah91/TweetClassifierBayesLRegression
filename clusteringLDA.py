@@ -86,7 +86,7 @@ for n_topicos in np.arange(2, 5, 1):
     i+=1
 
 # Saco la mejor iteracion
-i = 1
+i = 0
 maxCoherence = {'iteracion': 0, 'coherence': 0}
 for iteracion in registroIteraciones:
     if iteracion['coherence'] > maxCoherence['coherence']:
@@ -94,15 +94,29 @@ for iteracion in registroIteraciones:
     i+=1
 
 mejorIteracion = maxCoherence['iteracion']
-print("La mejor iteración es la ",registroIteraciones[mejorIteracion]['iteracion'], ". coherence=",registroIteraciones[mejorIteracion]['coherence'], ", n_topicos: ", registroIteraciones[mejorIteracion]['n_topicos'])
+print("La mejor iteración es la ",mejorIteracion+1, ". coherence=",registroIteraciones[mejorIteracion]['coherence'], ", n_topicos: ", registroIteraciones[mejorIteracion]['n_topicos'])
 
 
-array_n_topicos = [i['n_topicos'] for i in registroIteraciones]
-array_coherence = [i['coherence'] for i in registroIteraciones]
 
 
 # Se guarda el mejor modelo
+print("Se carga el mejor modelo")
 modelos[registroIteraciones[mejorIteracion]['iteracion'] - 1].save("modeloLDA")
+
+
+# ESTO NO SE SI ESTA BIEN ES PARA GUARDAR LOS CLUSTERES
+ldamodel =  models.LdaModel.load('modeloLDA')
+all_topics = ldamodel.get_document_topics(corpus, minimum_probability=0.0)
+all_topics_csr = gensim.matutils.corpus2csc(all_topics)
+all_topics_numpy = all_topics_csr.T.toarray()
+all_topics_df = pd.DataFrame(all_topics_numpy)
+all_topics_df.to_csv('clusters.csv')
+
+
+
+# Se representa graficamente
+array_n_topicos = [i['n_topicos'] for i in registroIteraciones]
+array_coherence = [i['coherence'] for i in registroIteraciones]
 
 plt.plot(array_n_topicos, array_coherence)
 plt.xlabel("Number of Topics")
