@@ -45,7 +45,7 @@ corpus = [id2word.doc2bow(text) for text in data_words]
 # Cada palabra: (word_id, word_frequency). Si es (47,3) quiere decir que la palabra con id 47 aparece 3 veces en el documento
 
 modelos = []
-
+# Iterar sobre los distintos numeros de topicos.
 def funcionLDA_model(corpus, id2word, num_topics, iterations):
     lda_model = LdaMulticore(corpus=corpus,  
                                             id2word=id2word,
@@ -96,6 +96,7 @@ mejorIteracion = maxCoherence['iteracion']
 print("La mejor iteración es la ",registroIteraciones[mejorIteracion]['iteracion'], ". coherence=",registroIteraciones[mejorIteracion]['coherence'], ", n_topicos: ", registroIteraciones[mejorIteracion]['n_topicos'])
 
 
+# Grafica para sacar el codo
 array_n_topicos = [i['n_topicos'] for i in registroIteraciones]
 array_coherence = [i['coherence'] for i in registroIteraciones]
 
