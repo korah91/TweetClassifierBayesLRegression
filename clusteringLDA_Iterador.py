@@ -28,8 +28,7 @@ df = pd.read_csv("datosProcesados.csv")
 
 
 
-# Seleccionar las filas en las que la opinion sea negativa, mas tarde podemos probar con las positivas y las neutrales
-X = df.loc[df['__target__']] == 'negative'
+
 
 # Paso todos los textos a una lista
 textos = df.text.values.tolist()
