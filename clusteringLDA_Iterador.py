@@ -29,15 +29,17 @@ df = pd.read_csv("datosProcesados.csv")
 
 
 
-
+# [Odio esta empresa, Me encatna esta empresa]
 # Paso todos los textos a una lista
 textos = df.text.values.tolist()
 
+# [ [Oidio, esta, empresa], [me, encanta]]
 # Paso cada texto de cada tweet de una string a una lista de palabras
 data_words = list(sent_to_words(textos))
 
 # Se crea el diccionario de las palabras; cada palabra unica contiene un identificador. Sirve para crear el corpus
 id2word = corpora.Dictionary(data_words)
+
 
 # Se crea el corpus
 corpus = [id2word.doc2bow(text) for text in data_words]

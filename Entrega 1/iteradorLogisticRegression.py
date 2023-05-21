@@ -25,8 +25,9 @@ df = pd.read_csv("datosProcesados.csv")
 #print(df.head())
 
 # Sacamos X y los labels
-X= df['text']
-y= df['__target__']
+X = df['text']
+y = df['__target__']
+
 #smote = SMOTE()
 #X,y = smote.fit_resample(X,y)
 #(PEORES RESULTADOS)tomeklinks elimina los ejemplos cercanos entre las clases minoritarias y mayoritarias, con el objetivo de aumentar la separación entre las clases
